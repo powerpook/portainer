@@ -8,13 +8,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/portainer/portainer/api/database"
+
 	"github.com/portainer/libhelm"
 	portainer "github.com/portainer/portainer/api"
-	"github.com/portainer/portainer/api/bolt"
 	"github.com/portainer/portainer/api/chisel"
 	"github.com/portainer/portainer/api/cli"
 	"github.com/portainer/portainer/api/crypto"
-	"github.com/portainer/portainer/api/datastore"
+	"github.com/portainer/portainer/api/dataservices"
 	"github.com/portainer/portainer/api/docker"
 	"github.com/portainer/portainer/api/exec"
 	"github.com/portainer/portainer/api/filesystem"
@@ -59,8 +60,8 @@ func initFileService(dataStorePath string) portainer.FileService {
 	return fileService
 }
 
-func initDataStore(dataStorePath string, rollback bool, fileService portainer.FileService, shutdownCtx context.Context) datastore.DataStore {
-	store := bolt.NewStore(dataStorePath, fileService)
+func initDataStore(dataStorePath string, rollback bool, fileService portainer.FileService, shutdownCtx context.Context) dataservices.DataStore {
+	store := database.NewStore(dataStorePath, fileService)
 	err := store.Open()
 	if err != nil {
 		log.Fatalf("failed opening store: %v", err)
@@ -91,7 +92,7 @@ func initDataStore(dataStorePath string, rollback bool, fileService portainer.Fi
 	return store
 }
 
-func shutdownDatastore(shutdownCtx context.Context, datastore datastore.DataStore) {
+func shutdownDatastore(shutdownCtx context.Context, datastore dataservices.DataStore) {
 	<-shutdownCtx.Done()
 	datastore.Close()
 }
@@ -109,7 +110,7 @@ func initSwarmStackManager(assetsPath string, configPath string, signatureServic
 	return exec.NewSwarmStackManager(assetsPath, configPath, signatureService, fileService, reverseTunnelService)
 }
 
-func initKubernetesDeployer(kubernetesTokenCacheManager *kubeproxy.TokenCacheManager, kubernetesClientFactory *kubecli.ClientFactory, dataStore datastore.DataStore, reverseTunnelService portainer.ReverseTunnelService, signatureService portainer.DigitalSignatureService, proxyManager *proxy.Manager, assetsPath string) portainer.KubernetesDeployer {
+func initKubernetesDeployer(kubernetesTokenCacheManager *kubeproxy.TokenCacheManager, kubernetesClientFactory *kubecli.ClientFactory, dataStore dataservices.DataStore, reverseTunnelService portainer.ReverseTunnelService, signatureService portainer.DigitalSignatureService, proxyManager *proxy.Manager, assetsPath string) portainer.KubernetesDeployer {
 	return exec.NewKubernetesDeployer(kubernetesTokenCacheManager, kubernetesClientFactory, dataStore, reverseTunnelService, signatureService, proxyManager, assetsPath)
 }
 
@@ -117,7 +118,7 @@ func initHelmPackageManager(assetsPath string) (libhelm.HelmPackageManager, erro
 	return libhelm.NewHelmPackageManager(libhelm.HelmConfig{BinaryPath: assetsPath})
 }
 
-func initJWTService(dataStore datastore.DataStore) (portainer.JWTService, error) {
+func initJWTService(dataStore dataservices.DataStore) (portainer.JWTService, error) {
 	settings, err := dataStore.Settings().Settings()
 	if err != nil {
 		return nil, err
@@ -154,7 +155,7 @@ func initGitService() portainer.GitService {
 	return git.NewService()
 }
 
-func initSSLService(addr, dataPath, certPath, keyPath string, fileService portainer.FileService, dataStore datastore.DataStore, shutdownTrigger context.CancelFunc) (*ssl.Service, error) {
+func initSSLService(addr, dataPath, certPath, keyPath string, fileService portainer.FileService, dataStore dataservices.DataStore, shutdownTrigger context.CancelFunc) (*ssl.Service, error) {
 	slices := strings.Split(addr, ":")
 	host := slices[0]
 	if host == "" {
@@ -175,11 +176,11 @@ func initDockerClientFactory(signatureService portainer.DigitalSignatureService,
 	return docker.NewClientFactory(signatureService, reverseTunnelService)
 }
 
-func initKubernetesClientFactory(signatureService portainer.DigitalSignatureService, reverseTunnelService portainer.ReverseTunnelService, instanceID string, dataStore datastore.DataStore) *kubecli.ClientFactory {
+func initKubernetesClientFactory(signatureService portainer.DigitalSignatureService, reverseTunnelService portainer.ReverseTunnelService, instanceID string, dataStore dataservices.DataStore) *kubecli.ClientFactory {
 	return kubecli.NewClientFactory(signatureService, reverseTunnelService, instanceID, dataStore)
 }
 
-func initSnapshotService(snapshotInterval string, dataStore datastore.DataStore, dockerClientFactory *docker.ClientFactory, kubernetesClientFactory *kubecli.ClientFactory, shutdownCtx context.Context) (portainer.SnapshotService, error) {
+func initSnapshotService(snapshotInterval string, dataStore dataservices.DataStore, dockerClientFactory *docker.ClientFactory, kubernetesClientFactory *kubecli.ClientFactory, shutdownCtx context.Context) (portainer.SnapshotService, error) {
 	dockerSnapshotter := docker.NewSnapshotter(dockerClientFactory)
 	kubernetesSnapshotter := kubernetes.NewSnapshotter(kubernetesClientFactory)
 
@@ -198,7 +199,7 @@ func initStatus(instanceID string) *portainer.Status {
 	}
 }
 
-func updateSettingsFromFlags(dataStore datastore.DataStore, flags *portainer.CLIFlags) error {
+func updateSettingsFromFlags(dataStore dataservices.DataStore, flags *portainer.CLIFlags) error {
 	settings, err := dataStore.Settings().Settings()
 	if err != nil {
 		return err
@@ -243,7 +244,7 @@ func updateSettingsFromFlags(dataStore datastore.DataStore, flags *portainer.CLI
 // enableFeaturesFromFlags turns on or off feature flags
 // e.g.  portainer --feat open-amt --feat fdo=true ... (defaults to true)
 // note, settings are persisted to the DB. To turn off `--feat open-amt=false`
-func enableFeaturesFromFlags(dataStore datastore.DataStore, flags *portainer.CLIFlags) error {
+func enableFeaturesFromFlags(dataStore dataservices.DataStore, flags *portainer.CLIFlags) error {
 	settings, err := dataStore.Settings().Settings()
 	if err != nil {
 		return err
@@ -312,7 +313,7 @@ func initKeyPair(fileService portainer.FileService, signatureService portainer.D
 	return generateAndStoreKeyPair(fileService, signatureService)
 }
 
-func createTLSSecuredEndpoint(flags *portainer.CLIFlags, dataStore datastore.DataStore, snapshotService portainer.SnapshotService) error {
+func createTLSSecuredEndpoint(flags *portainer.CLIFlags, dataStore dataservices.DataStore, snapshotService portainer.SnapshotService) error {
 	tlsConfiguration := portainer.TLSConfiguration{
 		TLS:           *flags.TLS,
 		TLSSkipVerify: *flags.TLSSkipVerify,
@@ -380,7 +381,7 @@ func createTLSSecuredEndpoint(flags *portainer.CLIFlags, dataStore datastore.Dat
 	return dataStore.Endpoint().Create(endpoint)
 }
 
-func createUnsecuredEndpoint(endpointURL string, dataStore datastore.DataStore, snapshotService portainer.SnapshotService) error {
+func createUnsecuredEndpoint(endpointURL string, dataStore dataservices.DataStore, snapshotService portainer.SnapshotService) error {
 	if strings.HasPrefix(endpointURL, "tcp://") {
 		_, err := client.ExecutePingOperation(endpointURL, nil)
 		if err != nil {
@@ -426,7 +427,7 @@ func createUnsecuredEndpoint(endpointURL string, dataStore datastore.DataStore, 
 	return dataStore.Endpoint().Create(endpoint)
 }
 
-func initEndpoint(flags *portainer.CLIFlags, dataStore datastore.DataStore, snapshotService portainer.SnapshotService) error {
+func initEndpoint(flags *portainer.CLIFlags, dataStore dataservices.DataStore, snapshotService portainer.SnapshotService) error {
 	if *flags.EndpointURL == "" {
 		return nil
 	}
