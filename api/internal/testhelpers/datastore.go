@@ -68,6 +68,13 @@ func (d *testDatastore) IsErrObjectNotFound(e error) bool {
 	return false
 }
 
+func (d *testDatastore) Export(filename string) (err error) {
+	return nil
+}
+func (d *testDatastore) Import(filename string) (err error) {
+	return nil
+}
+
 type datastoreOption = func(d *testDatastore)
 
 // NewDatastore creates new instance of testDatastore.
@@ -82,6 +89,10 @@ func NewDatastore(options ...datastoreOption) *testDatastore {
 
 type stubSettingsService struct {
 	settings *portainer.Settings
+}
+
+func (service *stubSettingsService) BucketName() string {
+	return "settings"
 }
 
 func (s *stubSettingsService) Settings() (*portainer.Settings, error) {
@@ -106,6 +117,10 @@ type stubUserService struct {
 	users []portainer.User
 }
 
+func (service *stubUserService) BucketName() string {
+	return "users"
+}
+
 func (s *stubUserService) User(ID portainer.UserID) (*portainer.User, error)       { return nil, nil }
 func (s *stubUserService) UserByUsername(username string) (*portainer.User, error) { return nil, nil }
 func (s *stubUserService) Users() ([]portainer.User, error)                        { return s.users, nil }
@@ -125,6 +140,10 @@ func WithUsers(us []portainer.User) datastoreOption {
 
 type stubEdgeJobService struct {
 	jobs []portainer.EdgeJob
+}
+
+func (service *stubEdgeJobService) BucketName() string {
+	return "edgejob"
 }
 
 func (s *stubEdgeJobService) EdgeJobs() ([]portainer.EdgeJob, error) { return s.jobs, nil }
@@ -147,6 +166,10 @@ func WithEdgeJobs(js []portainer.EdgeJob) datastoreOption {
 
 type stubEndpointRelationService struct {
 	relations []portainer.EndpointRelation
+}
+
+func (service *stubEndpointRelationService) BucketName() string {
+	return "endpoint_relation"
 }
 
 func (s *stubEndpointRelationService) EndpointRelations() ([]portainer.EndpointRelation, error) {
@@ -187,6 +210,10 @@ func WithEndpointRelations(relations []portainer.EndpointRelation) datastoreOpti
 
 type stubEndpointService struct {
 	endpoints []portainer.Endpoint
+}
+
+func (service *stubEndpointService) BucketName() string {
+	return "endpoint"
 }
 
 func (s *stubEndpointService) Endpoint(ID portainer.EndpointID) (*portainer.Endpoint, error) {
