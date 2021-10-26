@@ -5,11 +5,12 @@ import gitFormModule from './forms/git-form';
 import porAccessManagementModule from './accessManagement';
 import formComponentsModule from './form-components';
 import widgetModule from './widget';
+import headerModule from './Header';
 
 import { ReactExampleAngular } from './ReactExample';
 import { TooltipAngular } from './Tooltip';
 
 export default angular
-  .module('portainer.app.components', [widgetModule, sidebarModule, gitFormModule, porAccessManagementModule, formComponentsModule])
+  .module('portainer.app.components', [widgetModule, headerModule, sidebarModule, gitFormModule, porAccessManagementModule, formComponentsModule])
   .component('portainerTooltip', TooltipAngular)
   .component('reactExample', ReactExampleAngular).name;
