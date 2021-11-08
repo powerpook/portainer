@@ -29,12 +29,14 @@ type Handler struct {
 	*mux.Router
 	DataStore     portainer.DataStore
 	CryptoService portainer.CryptoService
+	isDemo        bool
 }
 
 // NewHandler creates a handler to manage user operations.
-func NewHandler(bouncer *security.RequestBouncer, rateLimiter *security.RateLimiter) *Handler {
+func NewHandler(bouncer *security.RequestBouncer, rateLimiter *security.RateLimiter, isDemo bool) *Handler {
 	h := &Handler{
 		Router: mux.NewRouter(),
+		isDemo: isDemo,
 	}
 	h.Handle("/users",
 		bouncer.AdminAccess(httperror.LoggerHandler(h.userCreate))).Methods(http.MethodPost)

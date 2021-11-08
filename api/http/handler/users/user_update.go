@@ -15,8 +15,8 @@ import (
 )
 
 type userUpdatePayload struct {
-	Username string `validate:"required" example:"bob"`
-	Password string `validate:"required" example:"cg9Wgky3"`
+	Username  string `validate:"required" example:"bob"`
+	Password  string `validate:"required" example:"cg9Wgky3"`
 	UserTheme string `example:"dark"`
 	// User role (1 for administrator account and 2 for regular account)
 	Role int `validate:"required" enums:"1,2" example:"2"`
@@ -54,6 +54,10 @@ func (handler *Handler) userUpdate(w http.ResponseWriter, r *http.Request) *http
 	userID, err := request.RetrieveNumericRouteVariableValue(r, "id")
 	if err != nil {
 		return &httperror.HandlerError{http.StatusBadRequest, "Invalid user identifier route variable", err}
+	}
+
+	if handler.isDemo && userID == 1 {
+		return &httperror.HandlerError{http.StatusForbidden, httperrors.ErrNotAvailableInDemo.Error(), httperrors.ErrNotAvailableInDemo}
 	}
 
 	tokenData, err := security.RetrieveTokenData(r)

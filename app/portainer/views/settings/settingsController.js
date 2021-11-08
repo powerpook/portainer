@@ -20,6 +20,7 @@ angular.module('portainer.app').controller('SettingsController', [
     ];
 
     $scope.state = {
+      isDemo: false,
       actionInProgress: false,
       availableEdgeAgentCheckinOptions: [
         {
@@ -152,6 +153,9 @@ angular.module('portainer.app').controller('SettingsController', [
     }
 
     function initView() {
+      const state = StateManager.getState();
+      $scope.state.isDemo = state.application.isDemo;
+
       SettingsService.settings()
         .then(function success(data) {
           var settings = data;

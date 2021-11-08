@@ -190,10 +190,11 @@ func initSnapshotService(snapshotInterval string, dataStore portainer.DataStore,
 	return snapshotService, nil
 }
 
-func initStatus(instanceID string) *portainer.Status {
+func initStatus(instanceID string, isDemo bool) *portainer.Status {
 	return &portainer.Status{
-		Version:    portainer.APIVersion,
-		InstanceID: instanceID,
+		Version:         portainer.APIVersion,
+		InstanceID:      instanceID,
+		DemoEnvironment: isDemo,
 	}
 }
 
@@ -470,6 +471,14 @@ func buildServer(flags *portainer.CLIFlags) portainer.Server {
 
 	cryptoService := initCryptoService()
 
+	if *flags.DemoEnvironment {
+		log.Print("[INFO] [main] Starting demo environment")
+		err := initDemoData(dataStore, cryptoService)
+		if err != nil {
+			log.Fatalf("failed initializing demo environment")
+		}
+	}
+
 	digitalSignatureService := initDigitalSignatureService()
 
 	sslService, err := initSSLService(*flags.AddrHTTPS, *flags.Data, *flags.SSLCert, *flags.SSLKey, fileService, dataStore, shutdownTrigger)
@@ -547,7 +556,7 @@ func buildServer(flags *portainer.CLIFlags) portainer.Server {
 		log.Fatalf("failed loading edge jobs from database: %v", err)
 	}
 
-	applicationStatus := initStatus(instanceID)
+	applicationStatus := initStatus(instanceID, *flags.DemoEnvironment)
 
 	err = initEndpoint(flags, dataStore, snapshotService)
 	if err != nil {
