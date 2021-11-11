@@ -83,6 +83,7 @@ overrides:
       '@typescript-eslint/no-unused-vars': 'error'
       '@typescript-eslint/no-explicit-any': 'error'
       'jsx-a11y/label-has-associated-control': ['error', { 'assert': 'either' }]
+      'no-await-in-loop': 'off'
   - files:
       - app/**/*.test.*
     extends:
