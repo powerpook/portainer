@@ -3,7 +3,6 @@ import EndpointHelper from 'Portainer/helpers/endpointHelper';
 angular
   .module('portainer.app')
   .controller('HomeController', function (
-    $q,
     $scope,
     $state,
     TagService,
@@ -74,45 +73,39 @@ angular
 
     $scope.getPaginatedEndpoints = getPaginatedEndpoints;
     function getPaginatedEndpoints(lastId, limit, search) {
-      const deferred = $q.defer();
-      $q.all({
-        endpoints: EndpointService.endpoints(lastId, limit, { search }),
-        groups: GroupService.groups(),
-      })
-        .then(function success(data) {
-          var endpoints = data.endpoints.value;
-          var groups = data.groups;
-          EndpointHelper.mapGroupNameToEndpoint(endpoints, groups);
-          EndpointProvider.setEndpoints(endpoints);
-          deferred.resolve({ endpoints: endpoints, totalCount: data.endpoints.totalCount });
+      return Promise.all([EndpointService.endpoints(lastId, limit, { search }), GroupService.groups()])
+        .then(function success([endpoints, groups]) {
+          EndpointHelper.mapGroupNameToEndpoint(endpoints.value, groups);
+          EndpointProvider.setEndpoints(endpoints.value);
+          return { endpoints: endpoints.value, totalCount: +endpoints.totalCount };
         })
         .catch(function error(err) {
           Notifications.error('Failure', err, 'Unable to retrieve environment information');
         });
-      return deferred.promise;
     }
 
     async function initView() {
-      $scope.state.homepageLoadTime = Math.floor(Date.now() / 1000);
-      $scope.isAdmin = Authentication.isAdmin();
+      return $scope.$evalAsync(async () => {
+        $scope.state.homepageLoadTime = Math.floor(Date.now() / 1000);
+        $scope.isAdmin = Authentication.isAdmin();
 
-      MotdService.motd().then(function success(data) {
-        $scope.motd = data;
-      });
+        MotdService.motd().then(function success(data) {
+          $scope.motd = data;
+        });
 
-      try {
-        const [{ totalCount, endpoints }, tags] = await Promise.all([getPaginatedEndpoints(0, 100), TagService.tags()]);
-        $scope.tags = tags;
-
-        $scope.totalCount = totalCount;
-        if (totalCount > 100) {
-          $scope.endpoints = [];
-        } else {
-          $scope.endpoints = endpoints;
+        try {
+          const [{ totalCount, endpoints }, tags] = await Promise.all([getPaginatedEndpoints(0, 100), TagService.tags()]);
+          $scope.tags = tags;
+          $scope.totalCount = parseInt(totalCount, 10);
+          if (totalCount > 100) {
+            $scope.endpoints = [];
+          } else {
+            $scope.endpoints = endpoints;
+          }
+        } catch (err) {
+          Notifications.error('Failed loading page data', err);
         }
-      } catch (err) {
-        Notifications.error('Failed loading page data', err);
-      }
+      });
     }
 
     initView();

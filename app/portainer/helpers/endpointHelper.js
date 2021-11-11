@@ -35,3 +35,13 @@ export default class EndpointHelper {
     }
   }
 }
+
+export function isKubernetesEndpoint(type) {
+  return [PortainerEndpointTypes.KubernetesLocalEnvironment, PortainerEndpointTypes.AgentOnKubernetesEnvironment, PortainerEndpointTypes.EdgeAgentOnKubernetesEnvironment].includes(
+    type
+  );
+}
+
+export function isDockerEndpoint(type) {
+  return [PortainerEndpointTypes.DockerEnvironment, PortainerEndpointTypes.AgentOnDockerEnvironment, PortainerEndpointTypes.EdgeAgentOnDockerEnvironment].includes(type);
+}
