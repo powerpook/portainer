@@ -5,14 +5,30 @@ import { buildOption } from '@/portainer/components/box-selector';
 
 export default class WizardDockerController {
   /* @ngInject */
-  constructor($async, EndpointService, StateManager, Notifications, clipboard, $filter, NameValidator) {
+  constructor($async, $scope, EndpointService, StateManager, Notifications, clipboard, $filter, NameValidator) {
     this.$async = $async;
+    this.$scope = $scope;
     this.EndpointService = EndpointService;
     this.StateManager = StateManager;
     this.Notifications = Notifications;
     this.clipboard = clipboard;
     this.$filter = $filter;
     this.NameValidator = NameValidator;
+
+    this.onToggleSkipCert = this.onToggleSkipCert.bind(this);
+    this.onToggleTls = this.onToggleTls.bind(this);
+  }
+
+  onToggleTls(checked) {
+    this.$scope.$evalAsync(() => {
+      this.formValues.tls = checked;
+    });
+  }
+
+  onToggleSkipCert(checked) {
+    this.$scope.$evalAsync(() => {
+      this.formValues.skipCertification = checked;
+    });
   }
 
   copyLinuxCommand() {
