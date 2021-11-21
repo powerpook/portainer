@@ -2,7 +2,10 @@ import axios, { AxiosRequestConfig } from 'axios';
 
 import { get as localStorageGet } from '../hooks/useLocalStorage';
 
-import { portainerAgentManagerOperation, portainerAgentTargetHeader } from './http-request.helper';
+import {
+  portainerAgentManagerOperation,
+  portainerAgentTargetHeader,
+} from './http-request.helper';
 
 const axiosApiInstance = axios.create({ baseURL: '/api' });
 

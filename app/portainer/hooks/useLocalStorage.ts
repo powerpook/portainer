@@ -6,7 +6,11 @@ function keyBuilder(key: string) {
   return `${localStoragePrefix}.${key}`;
 }
 
-export function useLocalStorage<T>(key: string, defaultValue: T, storage = localStorage): [T, (value: T) => void] {
+export function useLocalStorage<T>(
+  key: string,
+  defaultValue: T,
+  storage = localStorage
+): [T, (value: T) => void] {
   const [value, setValue] = useState(get<T>(key, defaultValue, storage));
 
   const handleChange = useCallback(
@@ -20,7 +24,11 @@ export function useLocalStorage<T>(key: string, defaultValue: T, storage = local
   return [value, handleChange];
 }
 
-export function get<T>(key: string, defaultValue: T, storage = localStorage): T {
+export function get<T>(
+  key: string,
+  defaultValue: T,
+  storage = localStorage
+): T {
   const value = storage.getItem(keyBuilder(key));
   if (!value) {
     return defaultValue;
