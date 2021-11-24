@@ -75,7 +75,7 @@ func (handler *Handler) authenticate(rw http.ResponseWriter, r *http.Request) *h
 		return &httperror.HandlerError{http.StatusUnprocessableEntity, "Invalid credentials", httperrors.ErrUnauthorized}
 	}
 
-	if isUserInitialAdmin(user) || settings.AuthenticationMethod == portainer.AuthenticationInternal {
+	if user != nil && isUserInitialAdmin(user) || settings.AuthenticationMethod == portainer.AuthenticationInternal {
 		return handler.authenticateInternal(rw, user, payload.Password)
 	}
 
