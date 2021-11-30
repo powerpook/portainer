@@ -111,6 +111,7 @@ func pullImage(ctx context.Context, docker *client.Client, imageName string) err
 		logrus.WithError(err).WithField("imageName", imageName).Error("Could not pull image from registry")
 		return err
 	}
+
 	// yeah, swiped this, need to figure out a good way to wait til its done...
 	b := make([]byte, 8)
 	for {
