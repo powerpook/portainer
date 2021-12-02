@@ -32,7 +32,20 @@ export function CopyButton({
   function onClick() {
     // https://developer.mozilla.org/en-US/docs/Web/API/Clipboard
     // https://caniuse.com/?search=clipboard
-    navigator.clipboard.writeText(copyText);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(copyText);
+    } else {
+      // https://stackoverflow.com/a/42416105
+      const textarea = document.createElement('textarea');
+      textarea.value = copyText;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
     setIsFading(true);
   }
 
